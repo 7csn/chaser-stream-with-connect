@@ -31,8 +31,8 @@ abstract class ConnectedServer extends Server implements ConnectedServerInterfac
     protected array $connections = [];
 
     /**
-     * @return ConnectionInterface|false
      * @inheritDoc
+     * @return ConnectionInterface|false
      */
     public function accept()
     {
