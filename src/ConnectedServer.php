@@ -31,6 +31,7 @@ abstract class ConnectedServer extends Server implements ConnectedServerInterfac
     protected array $connections = [];
 
     /**
+     * @return ConnectionInterface|false
      * @inheritDoc
      */
     public function accept()
@@ -60,9 +61,9 @@ abstract class ConnectedServer extends Server implements ConnectedServerInterfac
      *
      * @param resource $stream
      * @param string $remoteAddress
-     * @return ConnectionInterface|null
+     * @return ConnectionInterface
      */
-    protected function connection($stream, string $remoteAddress): ?ConnectionInterface
+    protected function connection($stream, string $remoteAddress): ConnectionInterface
     {
         return new Connection($this, $stream, $remoteAddress);
     }
