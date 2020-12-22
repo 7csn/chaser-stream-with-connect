@@ -18,7 +18,7 @@ use chaser\stream\traits\Stream;
  *
  * @property int $readBufferSize
  */
-abstract class Connection implements ConnectionInterface
+class Connection implements ConnectionInterface
 {
     use Communication, Configuration, ConnectedCommunication, Stream {
         Stream::close as streamClose;

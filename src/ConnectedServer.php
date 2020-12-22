@@ -62,7 +62,10 @@ abstract class ConnectedServer extends Server implements ConnectedServerInterfac
      * @param string $remoteAddress
      * @return ConnectionInterface|null
      */
-    abstract protected function connection($stream, string $remoteAddress): ?ConnectionInterface;
+    protected function connection($stream, string $remoteAddress): ?ConnectionInterface
+    {
+        return new Connection($this, $stream, $remoteAddress);
+    }
 
     /**
      * 保存通信对象
