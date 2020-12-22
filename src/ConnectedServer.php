@@ -40,7 +40,7 @@ abstract class ConnectedServer extends Server implements ConnectedServerInterfac
         if ($stream) {
 
             // 非阻塞模式、兼容 hhvm 无缓冲
-            stream_set_blocking($stream, 0);
+            stream_set_blocking($stream, false);
             stream_set_read_buffer($stream, 0);
 
             // 获取通信对象、配置并保存
