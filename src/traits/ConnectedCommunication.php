@@ -8,6 +8,9 @@ namespace chaser\stream\traits;
  * 连接通信
  *
  * @package chaser\stream\traits
+ * 
+ * @property resource $stream
+ * @property int $readBufferSize
  */
 trait ConnectedCommunication
 {
