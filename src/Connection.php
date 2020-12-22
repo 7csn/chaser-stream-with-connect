@@ -8,6 +8,7 @@ use chaser\stream\interfaces\ConnectedServerInterface;
 use chaser\stream\interfaces\ConnectionInterface;
 use chaser\stream\traits\Communication;
 use chaser\stream\traits\Configuration;
+use chaser\stream\traits\ConnectedCommunication;
 use chaser\stream\traits\Stream;
 
 /**
@@ -19,7 +20,7 @@ use chaser\stream\traits\Stream;
  */
 abstract class Connection implements ConnectionInterface
 {
-    use Communication, Configuration, Stream {
+    use Communication, Configuration, ConnectedCommunication, Stream {
         Stream::close as streamClose;
     }
 
@@ -66,30 +67,6 @@ abstract class Connection implements ConnectionInterface
     public function hash(): string
     {
         return $this->hash ??= spl_object_hash($this);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function connect(): bool
-    {
-        return true;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function receive()
-    {
-        return fread($this->stream, $this->readBufferSize);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function send(string $data)
-    {
-        return fwrite($this->stream, $data);
     }
 
     /**
