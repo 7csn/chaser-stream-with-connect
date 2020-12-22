@@ -1,0 +1,21 @@
+{
+  "name": "7csn/stream-with-connect",
+  "description": "流资源服务，用于构建有连接通信的流服务器及客户端",
+  "type": "library",
+  "require": {
+    "php": ">=7.4.0",
+    "7csn/stream": "dev-master"
+  },
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "7csn",
+      "email": "1479672753@qq.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "chaser\\stream\\": "src/"
+    }
+  }
+}
