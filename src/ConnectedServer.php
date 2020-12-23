@@ -32,9 +32,8 @@ abstract class ConnectedServer extends Server implements ConnectedServerInterfac
 
     /**
      * @inheritDoc
-     * @return ConnectionInterface|false
      */
-    public function accept()
+    public function accept(): ?array
     {
         $stream = stream_socket_accept($this->stream, 0, $remoteAddress);
 
@@ -44,16 +43,10 @@ abstract class ConnectedServer extends Server implements ConnectedServerInterfac
             stream_set_blocking($stream, false);
             stream_set_read_buffer($stream, 0);
 
-            // 获取通信对象、配置并保存
-            $connection = $this->connection($stream, $remoteAddress);
-            $connection->set($this->connection);
-            $this->saveConnection($connection);
-
-            // 返回通信对象
-            return $connection;
+            return [$stream, $remoteAddress];
         }
 
-        return false;
+        return null;
     }
 
     /**
@@ -63,7 +56,7 @@ abstract class ConnectedServer extends Server implements ConnectedServerInterfac
      * @param string $remoteAddress
      * @return ConnectionInterface
      */
-    protected function connection($stream, string $remoteAddress): ConnectionInterface
+    public function connection($stream, string $remoteAddress): ConnectionInterface
     {
         return new Connection($this, $stream, $remoteAddress);
     }
@@ -73,7 +66,7 @@ abstract class ConnectedServer extends Server implements ConnectedServerInterfac
      *
      * @param ConnectionInterface $connection
      */
-    protected function saveConnection(ConnectionInterface $connection)
+    public function saveConnection(ConnectionInterface $connection)
     {
         $this->connections[$connection->hash()] = $connection;
     }

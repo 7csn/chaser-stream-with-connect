@@ -26,5 +26,4 @@ abstract class ConnectedClient extends Client implements ConnectedClientInterfac
     protected array $configurations = [
         'readBufferSize' => self::READ_BUFFER_SIZE
     ];
-
 }
