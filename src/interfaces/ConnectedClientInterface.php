@@ -13,5 +13,4 @@ use chaser\stream\interfaces\parts\ConnectedInterface;
  */
 interface ConnectedClientInterface extends ClientInterface, ConnectedInterface
 {
-
 }

@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace chaser\stream;
 
-use chaser\stream\interfaces\ConnectedServerInterface;
-use chaser\stream\interfaces\ConnectionInterface;
+use chaser\stream\events\AcceptConnection;
+use chaser\stream\traits\ServerConnected;
+use chaser\stream\interfaces\{ConnectedServerInterface, ConnectionInterface};
 
 /**
  * 有连接的流服务器
@@ -16,77 +17,68 @@ use chaser\stream\interfaces\ConnectionInterface;
  */
 abstract class ConnectedServer extends Server implements ConnectedServerInterface
 {
+    use ServerConnected;
+
     /**
      * @inheritDoc
      */
     protected array $configurations = [
-        'connection' => []
+        'connection' => [],
     ];
 
     /**
-     * 有连接的通信对象库
-     *
-     * @var ConnectionInterface[]
+     * @inheritDoc
      */
-    protected array $connections = [];
+    public static function subscriber(): string
+    {
+        return ConnectedServerSubscriber::class;
+    }
 
     /**
      * @inheritDoc
      */
-    public function accept(): ?array
+    public function accept()
     {
-        $stream = stream_socket_accept($this->stream, 0, $remoteAddress);
+        $stream = stream_socket_accept($this->stream, 0);
 
         if ($stream) {
+            // 获取连接
+            $connection = $this->connection($stream);
 
-            // 非阻塞模式、兼容 hhvm 无缓冲
-            stream_set_blocking($stream, false);
-            stream_set_read_buffer($stream, 0);
+            // 连接配置、订阅者、连接
+            $connection->set($this->connection);
+            if ($connection->subscriber) {
+                $connection->addSubscriber($connection->subscriber);
+            }
+            $connection->connect();
 
-            return [$stream, $remoteAddress];
+            // 保存连接
+            $this->connections[$connection->hash()] = $connection;
+
+            // 接收连接事件
+            $this->dispatch(AcceptConnection::class, $connection);
         }
-
-        return null;
     }
 
     /**
-     * 获取通信对象
+     * 获取连接对象
      *
      * @param resource $stream
-     * @param string $remoteAddress
      * @return ConnectionInterface
      */
-    public function connection($stream, string $remoteAddress): ConnectionInterface
+    public function connection($stream): ConnectionInterface
     {
-        return new Connection($this, $stream, $remoteAddress);
-    }
-
-    /**
-     * 保存通信对象
-     *
-     * @param ConnectionInterface $connection
-     */
-    public function saveConnection(ConnectionInterface $connection)
-    {
-        $this->connections[$connection->hash()] = $connection;
+        return new Connection($this, $this->reactor, $stream);
     }
 
     /**
      * @inheritDoc
      */
-    public function removeConnection(string $hash)
+    protected function close()
     {
-        unset($this->connections[$hash]);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function close(): bool
-    {
-        foreach ($this->connections as $connection) {
-            $connection->close();
+        if ($this->stream) {
+            $this->closeSocket();
+            $this->closeConnections();
         }
-        return parent::close();
     }
 }

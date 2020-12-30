@@ -4,30 +4,81 @@ declare(strict_types=1);
 
 namespace chaser\stream\traits;
 
+use chaser\stream\events\{
+    ConnectionRecvBufferFull,
+    ConnectionUnpackingFail,
+    Message,
+    SendBufferDrain,
+    SendBufferFull,
+    SendFail,
+    SendInvalid
+};
+use chaser\stream\interfaces\parts\ConnectedInterface;
+use Throwable;
+
 /**
  * 连接通信
  *
  * @package chaser\stream\traits
- * 
- * @property resource $stream
- * @property int $readBufferSize
  */
 trait ConnectedCommunication
 {
     /**
-     * @inheritDoc
+     * 当前状态
+     *
+     * @var int
      */
-    public function connect(): bool
-    {
-        return true;
-    }
+    protected int $status = ConnectedInterface::STATUS_INITIAL;
+
+    /**
+     * 接收状态
+     *
+     * @var bool
+     */
+    protected bool $receiving = false;
+
+    /**
+     * 接收缓冲区内容
+     *
+     * @var string
+     */
+    protected string $recvBuffer = '';
+
+    /**
+     * 发送缓冲区内容
+     *
+     * @var string
+     */
+    protected string $sendBuffer = '';
+
+    /**
+     * 读的字节数
+     *
+     * @var int
+     */
+    protected int $readBytes = 0;
+
+    /**
+     * 写的字节数
+     *
+     * @var int
+     */
+    protected int $writtenBytes = 0;
 
     /**
      * @inheritDoc
      */
     public function receive()
     {
-        return fread($this->stream, $this->readBufferSize);
+        $this->read();
+    }
+
+    /**
+     * 套接字写回调
+     */
+    public function writeCallback()
+    {
+        $this->write();
     }
 
     /**
@@ -35,6 +86,281 @@ trait ConnectedCommunication
      */
     public function send(string $data)
     {
-        return fwrite($this->stream, $data);
+        $this->sendRaw($data);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function close(string $data = null)
+    {
+        if ($this->status === self::STATUS_CONNECTING) {
+            $this->destroy();
+            return;
+        }
+
+        if ($this->status === self::STATUS_CLOSING || $this->status === self::STATUS_CLOSED) {
+            return;
+        }
+
+        if ($data !== null) {
+            $this->send($data);
+        }
+
+        $this->status = self::STATUS_CLOSING;
+
+        $this->sendBuffer === '' ? $this->destroy() : $this->pauseRecv();
+    }
+
+    /**
+     * 套接字读
+     *
+     * @return false|string
+     */
+    protected function readOnly()
+    {
+        return @fread($this->stream, $this->readBufferSize);
+    }
+
+    /**
+     * 套接字写
+     *
+     * @param string $data
+     * @return false|int
+     */
+    protected function writeOnly(string $data)
+    {
+        return @fwrite($this->stream, $data);
+    }
+
+    /**
+     * 检测连接是否完成
+     *
+     * @return bool
+     */
+    protected function checkConnection()
+    {
+        return true;
+    }
+
+    /**
+     * 读操作
+     *
+     * @param bool $checkEof
+     */
+    protected function read(bool $checkEof = true)
+    {
+        $read = $this->readOnly();
+
+        if ($read) {
+            $length = strlen($read);
+            $this->readBytes += $length;
+            $this->recvBuffer .= $read;
+            try {
+                $package = $this->unpack();
+                if ($package) {
+                    try {
+                        $this->dispatch(Message::class, static::decode($package));
+                    } catch (Throwable $e) {
+                        $this->destroy();
+                    }
+                } elseif (strlen($this->recvBuffer) >= $this->maxRecvBufferSize) {
+                    $this->dispatchCache(ConnectionRecvBufferFull::class);
+                    $this->destroy();
+                }
+            } catch (Throwable $e) {
+                $this->dispatch(ConnectionUnpackingFail::class, $e);
+                $this->destroy();
+            }
+        } elseif ($checkEof && ($read === false || $this->invalid())) {
+            $this->destroy();
+        }
+    }
+
+    /**
+     * 尝试解包
+     *
+     * @return string|void
+     */
+    protected function unpack()
+    {
+        $data = $this->recvBuffer;
+        $this->recvBuffer = '';
+        return $data;
+    }
+
+    /**
+     * 响应对象编码成包
+     *
+     * @param mixed $response
+     * @return string
+     */
+    protected static function encode($response): string
+    {
+        return $response;
+    }
+
+    /**
+     * 请求包解码出对象
+     *
+     * @param string $package
+     * @return mixed
+     */
+    protected static function decode(string $package)
+    {
+        return $package;
+    }
+
+    /**
+     * 写操作
+     */
+    protected function write()
+    {
+        $length = strlen($this->sendBuffer);
+
+        if ($length === 0) {
+            return;
+        }
+
+        $writeLength = $this->writeOnly($this->sendBuffer);
+
+        if ($writeLength > 0) {
+            // 写入计数
+            $this->writtenBytes += $writeLength;
+
+            // 发送缓冲全部写入成功
+            if ($writeLength === $length) {
+                // 清除写侦听
+                $this->reactor->delWrite($this->stream);
+
+                // 清空发送缓冲区
+                $this->sendBuffer = '';
+
+                // 清空缓冲区事件分发
+                $this->dispatchCache(SendBufferDrain::class);
+
+                // 处于关闭阶段，销毁连接
+                if ($this->status === self::STATUS_CLOSING) {
+                    $this->destroy();
+                }
+            } else {
+                // 更新发送缓冲
+                $this->sendBuffer = substr($this->sendBuffer, $writeLength);
+            }
+        } // 写入失败（分发事件），破坏连接
+        else {
+            $this->dispatchCache(SendFail::class);
+            $this->destroy();
+        }
+    }
+
+    /**
+     * 发送信息
+     *
+     * @param string $data
+     */
+    protected function sendRaw(string $data): void
+    {
+        // 关闭阶段不能发送
+        if ($this->status === self::STATUS_CLOSING || $this->status === self::STATUS_CLOSED) {
+            return;
+        }
+
+        if ($data === '') {
+            return;
+        }
+
+        $length = strlen($data);
+
+        if ($this->sendBuffer === '') {
+            $wLen = $this->writeOnly($data);
+
+            // 发送失败（客户端关闭）
+            if (!$wLen && $this->invalid()) {
+                $this->dispatch(SendInvalid::class, $data);
+                $this->destroy();
+                return;
+            }
+
+            // 记录写入数据量
+            $this->writtenBytes += $wLen;
+
+            // 发送完毕直接返回
+            if ($wLen === $length) {
+                return;
+            }
+
+            // 剩余数据计入发送缓冲区
+            $this->sendBuffer = substr($data, $wLen);
+
+            // 监听套接字写，发送缓冲区数据由套接字写回调处理
+            $this->reactor->addWrite($this->stream, [$this, 'writeCallback']);
+        } else {
+            if ($this->isSendBufferFull()) {
+                return;
+            }
+            $this->sendBuffer .= $data;
+        }
+
+        $this->isSendBufferFull();
+    }
+
+    /**
+     * 检测是否发送缓冲区满
+     *
+     * @return bool
+     */
+    protected function isSendBufferFull(): bool
+    {
+        $full = strlen($this->sendBuffer) >= $this->maxRendBufferSize;
+        if ($full) {
+            $this->dispatchCache(SendBufferFull::class);
+        }
+        return $full;
+    }
+
+    /**
+     * 破坏连接
+     */
+    protected function destroy()
+    {
+        if ($this->status === self::STATUS_CLOSED) {
+            return;
+        }
+
+        $this->reactor->delRead($this->stream);
+        $this->reactor->delWrite($this->stream);
+
+        $this->server->removeConnection($this->hash());
+        $this->closeSocket();
+
+        $this->status = self::STATUS_CLOSED;
+
+        $this->recvBuffer = $this->sendBuffer = '';
+    }
+
+    /**
+     * 开始或继续接收数据
+     *
+     * @param bool $checkEof
+     */
+    protected function resumeRecv(bool $checkEof = false)
+    {
+        if ($this->receiving === false) {
+            $this->receiving = true;
+            $this->addRecvReactor();
+            $this->read($checkEof);
+        }
+    }
+
+    /**
+     * 停止接收数据
+     */
+    protected function pauseRecv()
+    {
+        if ($this->receiving === true) {
+            $this->reactor->delRead($this->stream);
+            $this->receiving = false;
+        }
     }
 }

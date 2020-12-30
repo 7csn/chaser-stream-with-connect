@@ -4,17 +4,14 @@ declare(strict_types=1);
 
 namespace chaser\stream\interfaces;
 
-use chaser\stream\interfaces\parts\CommunicationInterface;
-use chaser\stream\interfaces\parts\ConfigurationInterface;
-use chaser\stream\interfaces\parts\ConnectedInterface;
-use chaser\stream\interfaces\parts\StreamInterface;
+use chaser\stream\interfaces\parts\{CommunicationInterface, ConnectedInterface, HelperInterface};
 
 /**
  * 连接
  *
  * @package chaser\stream\interfaces
  */
-interface ConnectionInterface extends CommunicationInterface, ConfigurationInterface, ConnectedInterface, StreamInterface
+interface ConnectionInterface extends CommunicationInterface, ConnectedInterface, HelperInterface
 {
     /**
      * 获取对象标识
