@@ -5,20 +5,21 @@ declare(strict_types=1);
 namespace chaser\stream;
 
 use chaser\stream\events\AcceptConnection;
+use chaser\stream\interfaces\ConnectedServerInterface;
 
 /**
  * 有连接的服务器事件订阅者
  *
  * @package chaser\stream
  *
- * @property ConnectedServer $server
+ * @property ConnectedServerInterface $server
  */
 class ConnectedServerSubscriber extends ServerSubscriber
 {
     /**
      * @inheritDoc
      */
-    public function __construct(ConnectedServer $server)
+    public function __construct(ConnectedServerInterface $server)
     {
         parent::__construct($server);
         $this->setEvent(AcceptConnection::class, 'accept');

@@ -276,7 +276,7 @@ trait ConnectedCommunication
      */
     protected function isSendBufferFull(): bool
     {
-        $full = strlen($this->sendBuffer) >= $this->maxRendBufferSize;
+        $full = strlen($this->sendBuffer) >= $this->maxSendBufferSize;
         if ($full) {
             $this->dispatchCache(SendBufferFull::class);
         }

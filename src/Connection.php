@@ -16,7 +16,7 @@ use chaser\stream\traits\{Communication, ConnectedCommunication, Helper};
  *
  * @property int $readBufferSize
  * @property int $maxRecvBufferSize
- * @property int $maxRendBufferSize
+ * @property int $maxSendBufferSize
  */
 class Connection implements ConnectionInterface
 {
