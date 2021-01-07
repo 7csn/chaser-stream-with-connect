@@ -54,14 +54,14 @@ interface ConnectedInterface
     public const READ_BUFFER_SIZE = (64 << 10) - 1;
 
     /**
-     * 接收缓冲区默认上限 10M
+     * 请求缓冲区默认上限 10M
      *
      * @var int
      */
-    public const MAX_RECV_BUFFER_SIZE = 10 << 10 << 10;
+    public const MAX_REQUEST_BUFFER_SIZE = 10 << 10 << 10;
 
     /**
-     * 发送缓冲区默认上限 1M
+     * 响应缓冲区默认上限 1M
      */
-    public const MAX_SEND_BUFFER_SIZE = 1 << 10 << 10;
+    public const MAX_RESPONSE_BUFFER_SIZE = 1 << 10 << 10;
 }

@@ -86,13 +86,54 @@ trait ConnectedCommunication
      */
     public function send(string $data)
     {
-        $this->sendRaw($data);
+        // 关闭阶段不能发送
+        if ($this->status === self::STATUS_CLOSING || $this->status === self::STATUS_CLOSED) {
+            return;
+        }
+
+        if ($data === '') {
+            return;
+        }
+
+        $length = strlen($data);
+
+        if ($this->sendBuffer === '') {
+            $wLen = $this->writeOnly($data);
+
+            // 发送失败（客户端关闭）
+            if (!$wLen && $this->invalid()) {
+                $this->dispatch(SendInvalid::class, $data);
+                $this->destroy();
+                return;
+            }
+
+            // 记录写入数据量
+            $this->writtenBytes += $wLen;
+
+            // 发送完毕直接返回
+            if ($wLen === $length) {
+                return;
+            }
+
+            // 剩余数据计入发送缓冲区
+            $this->sendBuffer = substr($data, $wLen);
+
+            // 监听套接字写，发送缓冲区数据由套接字写回调处理
+            $this->reactor->addWrite($this->stream, [$this, 'writeCallback']);
+        } else {
+            if ($this->isSendBufferFull()) {
+                return;
+            }
+            $this->sendBuffer .= $data;
+        }
+
+        $this->isSendBufferFull();
     }
 
     /**
      * @inheritDoc
      */
-    public function close(string $data = null)
+    public function close()
     {
         if ($this->status === self::STATUS_CONNECTING) {
             $this->destroy();
@@ -101,10 +142,6 @@ trait ConnectedCommunication
 
         if ($this->status === self::STATUS_CLOSING || $this->status === self::STATUS_CLOSED) {
             return;
-        }
-
-        if ($data !== null) {
-            $this->send($data);
         }
 
         $this->status = self::STATUS_CLOSING;
@@ -157,10 +194,10 @@ trait ConnectedCommunication
             $this->readBytes += $length;
             $this->recvBuffer .= $read;
             try {
-                $package = $this->unpack();
-                if ($package) {
+                $message = $this->getMessage();
+                if ($message) {
                     try {
-                        $this->dispatch(Message::class, static::decode($package));
+                        $this->dispatch(Message::class, $message);
                     } catch (Throwable $e) {
                         $this->destroy();
                     }
@@ -180,35 +217,13 @@ trait ConnectedCommunication
     /**
      * 尝试解包
      *
-     * @return string|void
+     * @return string|object|void
      */
-    protected function unpack()
+    protected function getMessage()
     {
         $data = $this->recvBuffer;
         $this->recvBuffer = '';
         return $data;
-    }
-
-    /**
-     * 响应对象编码成包
-     *
-     * @param mixed $response
-     * @return string
-     */
-    protected static function encode($response): string
-    {
-        return $response;
-    }
-
-    /**
-     * 请求包解码出对象
-     *
-     * @param string $package
-     * @return mixed
-     */
-    protected static function decode(string $package)
-    {
-        return $package;
     }
 
     /**
@@ -252,57 +267,6 @@ trait ConnectedCommunication
             $this->dispatchCache(SendFail::class);
             $this->destroy();
         }
-    }
-
-    /**
-     * 发送信息
-     *
-     * @param string $data
-     */
-    protected function sendRaw(string $data): void
-    {
-        // 关闭阶段不能发送
-        if ($this->status === self::STATUS_CLOSING || $this->status === self::STATUS_CLOSED) {
-            return;
-        }
-
-        if ($data === '') {
-            return;
-        }
-
-        $length = strlen($data);
-
-        if ($this->sendBuffer === '') {
-            $wLen = $this->writeOnly($data);
-
-            // 发送失败（客户端关闭）
-            if (!$wLen && $this->invalid()) {
-                $this->dispatch(SendInvalid::class, $data);
-                $this->destroy();
-                return;
-            }
-
-            // 记录写入数据量
-            $this->writtenBytes += $wLen;
-
-            // 发送完毕直接返回
-            if ($wLen === $length) {
-                return;
-            }
-
-            // 剩余数据计入发送缓冲区
-            $this->sendBuffer = substr($data, $wLen);
-
-            // 监听套接字写，发送缓冲区数据由套接字写回调处理
-            $this->reactor->addWrite($this->stream, [$this, 'writeCallback']);
-        } else {
-            if ($this->isSendBufferFull()) {
-                return;
-            }
-            $this->sendBuffer .= $data;
-        }
-
-        $this->isSendBufferFull();
     }
 
     /**

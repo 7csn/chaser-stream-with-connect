@@ -29,5 +29,7 @@ class ConnectedClientSubscriber extends ClientSubscriber
      *
      * @param ConnectFail $event
      */
-    public function connectFail(ConnectFail $event):void{}
+    public function connectFail(ConnectFail $event): void
+    {
+    }
 }

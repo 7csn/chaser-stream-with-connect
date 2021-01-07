@@ -14,16 +14,20 @@ use chaser\stream\interfaces\{ConnectedServerInterface, ConnectionInterface};
  * @package chaser\stream
  *
  * @property array $connection
+ * @property string $connectionSubscriber
  */
 abstract class ConnectedServer extends Server implements ConnectedServerInterface
 {
     use ServerConnected;
 
     /**
-     * @inheritDoc
+     * 常规配置
+     *
+     * @var array
      */
     protected array $configurations = [
         'connection' => [],
+        'connectionSubscriber' => '',
     ];
 
     /**
@@ -47,8 +51,8 @@ abstract class ConnectedServer extends Server implements ConnectedServerInterfac
 
             // 连接配置、订阅者、连接
             $connection->set($this->connection);
-            if ($connection->subscriber) {
-                $connection->addSubscriber($connection->subscriber);
+            if ($this->connectionSubscriber) {
+                $connection->addSubscriber($this->connectionSubscriber);
             }
             $connection->connect();
 

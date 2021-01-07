@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace chaser\stream;
 
-use chaser\reactor\Reactor;
+use chaser\reactor\Driver;
 use chaser\stream\events\Connect;
 use chaser\stream\interfaces\ConnectionInterface;
 use chaser\stream\traits\{Communication, ConnectedCommunication, Helper};
@@ -17,7 +17,6 @@ use chaser\stream\traits\{Communication, ConnectedCommunication, Helper};
  * @property int $readBufferSize
  * @property int $maxRecvBufferSize
  * @property int $maxRendBufferSize
- * @property string $subscriber
  */
 class Connection implements ConnectionInterface
 {
@@ -33,9 +32,9 @@ class Connection implements ConnectionInterface
     /**
      * 事件反应器
      *
-     * @var Reactor
+     * @var Driver
      */
-    protected Reactor $reactor;
+    protected Driver $reactor;
 
     /**
      * 对象标识
@@ -51,9 +50,8 @@ class Connection implements ConnectionInterface
      */
     protected array $configurations = [
         'readBufferSize' => self::READ_BUFFER_SIZE,
-        'maxRecvBufferSize' => self::MAX_RECV_BUFFER_SIZE,
-        'maxSendBufferSize' => self::MAX_SEND_BUFFER_SIZE,
-        'subscriber' => ''
+        'maxRecvBufferSize' => self::MAX_REQUEST_BUFFER_SIZE,
+        'maxSendBufferSize' => self::MAX_RESPONSE_BUFFER_SIZE
     ];
 
     /**
@@ -68,10 +66,10 @@ class Connection implements ConnectionInterface
      * 构造函数
      *
      * @param ConnectedServer $server
-     * @param Reactor $reactor
+     * @param Driver $reactor
      * @param resource $stream
      */
-    public function __construct(ConnectedServer $server, Reactor $reactor, $stream)
+    public function __construct(ConnectedServer $server, Driver $reactor, $stream)
     {
         // 非阻塞模式、兼容 hhvm 无缓冲
         stream_set_blocking($stream, false);

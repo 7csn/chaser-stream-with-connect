@@ -16,7 +16,6 @@ use chaser\stream\traits\ConnectedCommunication;
  * @property int $readBufferSize
  * @property int $maxRecvBufferSize
  * @property int $maxRendBufferSize
- * @property string $subscriber
  */
 abstract class ConnectedClient extends Client implements ConnectedClientInterface
 {
@@ -29,9 +28,8 @@ abstract class ConnectedClient extends Client implements ConnectedClientInterfac
      */
     protected array $configurations = [
         'readBufferSize' => self::READ_BUFFER_SIZE,
-        'maxRecvBufferSize' => self::MAX_SEND_BUFFER_SIZE,
-        'maxSendBufferSize' => self::MAX_RECV_BUFFER_SIZE,
-        'subscriber' => ''
+        'maxRecvBufferSize' => self::MAX_RESPONSE_BUFFER_SIZE,
+        'maxSendBufferSize' => self::MAX_REQUEST_BUFFER_SIZE
     ];
 
     /**
@@ -74,7 +72,6 @@ abstract class ConnectedClient extends Client implements ConnectedClientInterfac
                 $this->remoteAddress = $remoteAddress;
 
                 if ($this->checkConnection()) {
-
                     $this->connected();
                 }
 
