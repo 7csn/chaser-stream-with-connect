@@ -6,7 +6,7 @@ namespace chaser\stream;
 
 use chaser\stream\events\AcceptConnection;
 use chaser\stream\traits\ServerConnected;
-use chaser\stream\interfaces\{ConnectedServerInterface, ConnectionInterface};
+use chaser\stream\interfaces\ConnectedServerInterface;
 
 /**
  * 有连接的流服务器
@@ -68,9 +68,9 @@ abstract class ConnectedServer extends Server implements ConnectedServerInterfac
      * 获取连接对象
      *
      * @param resource $stream
-     * @return ConnectionInterface
+     * @return Connection
      */
-    public function connection($stream): ConnectionInterface
+    public function connection($stream): Connection
     {
         return new Connection($this, $this->reactor, $stream);
     }
