@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace chaser\stream\events;
 
+use chaser\stream\traits\PropertyReadable;
 use Throwable;
 
 /**
@@ -13,12 +14,14 @@ use Throwable;
  */
 class ConnectionUnpackingFail
 {
+    use PropertyReadable;
+
     /**
      * 解包异常
      *
-     * @var Throwable
+     * @property-read Throwable
      */
-    public Throwable $exception;
+    protected Throwable $exception;
 
     /**
      * 初始化数据
