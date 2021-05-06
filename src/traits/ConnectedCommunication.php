@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace chaser\stream\traits;
 
+use chaser\stream\exceptions\UnpackedException;
 use chaser\stream\events\{
     ConnectionRecvBufferFull,
     ConnectionUnpackingFail,
@@ -14,7 +15,6 @@ use chaser\stream\events\{
     SendInvalid
 };
 use chaser\stream\interfaces\parts\ConnectedInterface;
-use Throwable;
 
 /**
  * 连接通信
@@ -195,18 +195,14 @@ trait ConnectedCommunication
             $this->recvBuffer .= $read;
             try {
                 $message = $this->getMessage();
-                if ($message) {
-                    try {
-                        $this->dispatch(Message::class, $message);
-                    } catch (Throwable $e) {
-                        $this->destroy();
-                    }
-                } elseif (strlen($this->recvBuffer) >= $this->maxRecvBufferSize) {
-                    $this->dispatchCache(ConnectionRecvBufferFull::class);
-                    $this->destroy();
-                }
-            } catch (Throwable $e) {
+            } catch (UnpackedException $e) {
                 $this->dispatch(ConnectionUnpackingFail::class, $e);
+                $this->destroy();
+            }
+            if ($message) {
+                $this->dispatch(Message::class, $message);
+            } elseif (strlen($this->recvBuffer) >= $this->maxRecvBufferSize) {
+                $this->dispatchCache(ConnectionRecvBufferFull::class);
                 $this->destroy();
             }
         } elseif ($checkEof && ($read === false || $this->invalid())) {
