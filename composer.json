@@ -4,7 +4,7 @@
   "type": "library",
   "require": {
     "php": ">=7.4.0",
-    "7csn/stream": "dev-master"
+    "7csn/stream": "@dev"
   },
   "license": "MIT",
   "authors": [
@@ -13,7 +13,6 @@
       "email": "1479672753@qq.com"
     }
   ],
-  "minimum-stability": "dev",
   "autoload": {
     "psr-4": {
       "chaser\\stream\\": "src/"
