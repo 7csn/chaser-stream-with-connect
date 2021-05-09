@@ -195,14 +195,14 @@ trait ConnectedCommunication
             $this->recvBuffer .= $read;
             try {
                 $message = $this->getMessage();
+                if ($message) {
+                    $this->dispatch(Message::class, $message);
+                } elseif (strlen($this->recvBuffer) >= $this->maxRecvBufferSize) {
+                    $this->dispatchCache(ConnectionRecvBufferFull::class);
+                    $this->destroy();
+                }
             } catch (UnpackedException $e) {
                 $this->dispatch(ConnectionUnpackingFail::class, $e);
-                $this->destroy();
-            }
-            if ($message) {
-                $this->dispatch(Message::class, $message);
-            } elseif (strlen($this->recvBuffer) >= $this->maxRecvBufferSize) {
-                $this->dispatchCache(ConnectionRecvBufferFull::class);
                 $this->destroy();
             }
         } elseif ($checkEof && ($read === false || $this->invalid())) {
@@ -213,7 +213,8 @@ trait ConnectedCommunication
     /**
      * 尝试解包
      *
-     * @return string|object|void
+     * @return string|object|null
+     * @throws UnpackedException
      */
     protected function getMessage()
     {
