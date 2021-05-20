@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace chaser\stream;
 
 use chaser\stream\events\AcceptConnection;
+use chaser\stream\interfaces\ConnectionInterface;
 use chaser\stream\traits\ServerConnected;
 use chaser\stream\interfaces\ConnectedServerInterface;
 
@@ -43,11 +44,11 @@ abstract class ConnectedServer extends Server implements ConnectedServerInterfac
      */
     public function acceptConnection(): void
     {
-        $stream = stream_socket_accept($this->socket, 0);
+        $socket = stream_socket_accept($this->socket, 0);
 
-        if ($stream) {
+        if ($socket) {
             // 获取连接
-            $connection = $this->connection($stream);
+            $connection = $this->connection($socket);
 
             // 连接配置、订阅者、连接
             $connection->configure($this->connection);
@@ -67,12 +68,12 @@ abstract class ConnectedServer extends Server implements ConnectedServerInterfac
     /**
      * 获取连接对象
      *
-     * @param resource $stream
-     * @return Connection
+     * @param resource $socket
+     * @return ConnectionInterface
      */
-    public function connection($stream): Connection
+    public function connection($socket): ConnectionInterface
     {
-        return new Connection($this, $this->reactor, $stream);
+        return new Connection($this, $this->reactor, $socket);
     }
 
     /**

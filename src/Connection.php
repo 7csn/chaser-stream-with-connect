@@ -46,17 +46,17 @@ class Connection implements ConnectionInterface
      *
      * @param ConnectedServer $server
      * @param Driver $reactor
-     * @param resource $stream
+     * @param resource $socket
      */
-    public function __construct(ConnectedServer $server, Driver $reactor, $stream)
+    public function __construct(ConnectedServer $server, Driver $reactor, $socket)
     {
         // 非阻塞模式、兼容 hhvm 无缓冲
-        stream_set_blocking($stream, false);
-        stream_set_read_buffer($stream, 0);
+        stream_set_blocking($socket, false);
+        stream_set_read_buffer($socket, 0);
 
         $this->server = $server;
         $this->reactor = $reactor;
-        $this->socket = $stream;
+        $this->socket = $socket;
 
         $this->initEventDispatcher();
     }
