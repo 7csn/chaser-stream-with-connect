@@ -7,28 +7,22 @@ namespace chaser\stream\events;
 use chaser\stream\traits\PropertyReadable;
 
 /**
- * 连接通信发送无效（客户端关闭）
+ * 信息发送无效（客户端关闭）事件类
  *
  * @package chaser\stream\events
+ *
+ * @property-read string $data
  */
 class SendInvalid
 {
     use PropertyReadable;
 
     /**
-     * 发送信息
-     *
-     * @property-read string
-     */
-    protected string $data;
-
-    /**
      * 初始化数据
      *
      * @param string $data
      */
-    public function __construct(string $data)
+    public function __construct(private string $data)
     {
-        $this->data = $data;
     }
 }

@@ -35,22 +35,22 @@ abstract class ConnectedServer extends Server implements ConnectedServerInterfac
      */
     public static function subscriber(): string
     {
-        return ConnectedServerSubscriber::class;
+        return ConnectedServerInterface::class;
     }
 
     /**
      * @inheritDoc
      */
-    public function accept()
+    public function acceptConnection(): void
     {
-        $stream = stream_socket_accept($this->stream, 0);
+        $stream = stream_socket_accept($this->socket, 0);
 
         if ($stream) {
             // 获取连接
             $connection = $this->connection($stream);
 
             // 连接配置、订阅者、连接
-            $connection->set($this->connection);
+            $connection->configure($this->connection);
             if ($this->connectionSubscriber) {
                 $connection->addSubscriber($this->connectionSubscriber);
             }
@@ -78,11 +78,11 @@ abstract class ConnectedServer extends Server implements ConnectedServerInterfac
     /**
      * @inheritDoc
      */
-    protected function close()
+    protected function close(): void
     {
-        if ($this->stream) {
-            $this->closeSocket();
+        if ($this->socket) {
             $this->closeConnections();
+            $this->closeSocket();
         }
     }
 }

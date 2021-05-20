@@ -7,7 +7,7 @@ namespace chaser\stream\traits;
 use chaser\stream\interfaces\ConnectionInterface;
 
 /**
- * 服务器连接相关
+ * 流服务器连接特征
  *
  * @package chaser\stream\traits
  */
@@ -23,7 +23,7 @@ trait ServerConnected
     /**
      * @inheritDoc
      */
-    public function removeConnection(string $hash)
+    public function removeConnection(string $hash): void
     {
         unset($this->connections[$hash]);
     }

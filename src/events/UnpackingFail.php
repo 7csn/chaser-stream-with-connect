@@ -8,28 +8,22 @@ use chaser\stream\traits\PropertyReadable;
 use Throwable;
 
 /**
- * 连接信息解包失败
+ * 解包失败事件类
  *
  * @package chaser\stream\events
+ *
+ * @property-read Throwable $exception
  */
-class ConnectionUnpackingFail
+class UnpackingFail
 {
     use PropertyReadable;
-
-    /**
-     * 解包异常
-     *
-     * @property-read Throwable
-     */
-    protected Throwable $exception;
 
     /**
      * 初始化数据
      *
      * @param Throwable $exception
      */
-    public function __construct(Throwable $exception)
+    public function __construct(private Throwable $exception)
     {
-        $this->exception = $exception;
     }
 }

@@ -1,16 +1,14 @@
 <?php
 
-declare(strict_types=1);
-
-namespace chaser\stream;
+namespace chaser\stream\subscribers;
 
 use chaser\stream\events\AcceptConnection;
 use chaser\stream\interfaces\ConnectedServerInterface;
 
 /**
- * 有连接的服务器事件订阅者
+ * 有连接的流服务器事件订阅类
  *
- * @package chaser\stream
+ * @package chaser\stream\subscribers
  *
  * @property ConnectedServerInterface $server
  */
@@ -19,10 +17,9 @@ class ConnectedServerSubscriber extends ServerSubscriber
     /**
      * @inheritDoc
      */
-    public function __construct(ConnectedServerInterface $server)
+    public static function events(): array
     {
-        parent::__construct($server);
-        $this->setEvent(AcceptConnection::class, 'accept');
+        return [AcceptConnection::class => 'accept'] + parent::events();
     }
 
     /**

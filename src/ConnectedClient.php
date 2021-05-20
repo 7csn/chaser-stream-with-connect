@@ -4,33 +4,20 @@ declare(strict_types=1);
 
 namespace chaser\stream;
 
+use chaser\stream\exceptions\ClientConnectedException;
+use chaser\stream\subscribers\ConnectedClientSubscriber;
 use chaser\stream\events\{Connect, ConnectFail};
 use chaser\stream\interfaces\ConnectedClientInterface;
 use chaser\stream\traits\ConnectedCommunication;
 
 /**
- * 有连接的客户端
+ * 有通信连接的客户端类
  *
  * @package chaser\stream
- *
- * @property int $readBufferSize
- * @property int $maxRecvBufferSize
- * @property int $maxSendBufferSize
  */
 abstract class ConnectedClient extends Client implements ConnectedClientInterface
 {
     use ConnectedCommunication;
-
-    /**
-     * 常规配置
-     *
-     * @var array
-     */
-    protected array $configurations = [
-        'readBufferSize' => self::READ_BUFFER_SIZE,
-        'maxRecvBufferSize' => self::MAX_RESPONSE_BUFFER_SIZE,
-        'maxSendBufferSize' => self::MAX_REQUEST_BUFFER_SIZE
-    ];
 
     /**
      * @inheritDoc
@@ -41,16 +28,20 @@ abstract class ConnectedClient extends Client implements ConnectedClientInterfac
     }
 
     /**
-     * @inheritDoc
+     * @throws ClientConnectedException
      */
-    public function connect()
+    public function connect(): void
     {
         // 可连接状态：初始、关闭中、已关闭
         if ($this->status === self::STATUS_INITIAL || $this->status === self::STATUS_CLOSING || $this->status === self::STATUS_CLOSED) {
             // 关闭中套接字流尚在，不需另行创建
-            if ($this->status === self::STATUS_CLOSING || $this->create()) {
+            if ($this->status === self::STATUS_CLOSING) {
                 $this->status = self::STATUS_CONNECTING;
-                $this->reactor->addWrite($this->stream, [$this, 'connecting']);
+                $this->reactor->addWrite($this->socket, [$this, 'connecting']);
+            } else {
+                $this->create();
+                $this->status = self::STATUS_CONNECTING;
+                $this->reactor->addWrite($this->socket, [$this, 'connecting']);
             }
         }
     }
@@ -62,12 +53,12 @@ abstract class ConnectedClient extends Client implements ConnectedClientInterfac
     {
         if ($this->status === self::STATUS_CONNECTING) {
 
-            $this->reactor->delWrite($this->stream);
+            $this->reactor->delWrite($this->socket);
 
-            if ($remoteAddress = stream_socket_get_name($this->stream, true)) {
+            if ($remoteAddress = stream_socket_get_name($this->socket, true)) {
 
-                stream_set_blocking($this->stream, false);
-                stream_set_read_buffer($this->stream, 0);
+                stream_set_blocking($this->socket, false);
+                stream_set_read_buffer($this->socket, 0);
 
                 $this->remoteAddress = $remoteAddress;
 
@@ -76,7 +67,7 @@ abstract class ConnectedClient extends Client implements ConnectedClientInterfac
                 }
 
             } else {
-                $this->dispatchCache(ConnectFail::class);
+                $this->dispatch(ConnectFail::class);
             }
         }
     }
@@ -86,8 +77,8 @@ abstract class ConnectedClient extends Client implements ConnectedClientInterfac
      */
     protected function connected()
     {
-        $this->addRecvReactor();
+        $this->addReadReactor([$this, 'receive']);
         $this->status = self::STATUS_ESTABLISHED;
-        $this->dispatchCache(Connect::class);
+        $this->dispatch(Connect::class);
     }
 }

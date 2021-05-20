@@ -3,7 +3,8 @@
   "description": "流资源服务，用于构建有连接通信的流服务器及客户端",
   "type": "library",
   "require": {
-    "php": ">=7.4.0",
+    "php": "^8.0",
+    "7csn/container": "^1.0",
     "7csn/stream": "^1.0"
   },
   "license": "MIT",

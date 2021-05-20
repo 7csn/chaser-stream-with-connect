@@ -6,29 +6,44 @@ namespace chaser\stream\traits;
 
 use chaser\stream\exceptions\UnpackedException;
 use chaser\stream\events\{
-    ConnectionRecvBufferFull,
-    ConnectionUnpackingFail,
+    RecvBufferFull,
+    UnpackingFail,
     Message,
     SendBufferDrain,
     SendBufferFull,
     SendFail,
     SendInvalid
 };
-use chaser\stream\interfaces\parts\ConnectedInterface;
+use chaser\stream\interfaces\parts\CommunicationConnectedInterface;
 
 /**
- * 连接通信
+ * 连接通信特征
  *
  * @package chaser\stream\traits
+ *
+ * @property int $readBufferSize
+ * @property int $maxRecvBufferSize
+ * @property int $maxSendBufferSize
  */
 trait ConnectedCommunication
 {
+    /**
+     * 常规配置
+     *
+     * @var array
+     */
+    protected array $configurations = [
+        'readBufferSize' => self::READ_BUFFER_SIZE,
+        'maxRecvBufferSize' => self::MAX_REQUEST_BUFFER_SIZE,
+        'maxSendBufferSize' => self::MAX_RESPONSE_BUFFER_SIZE
+    ];
+
     /**
      * 当前状态
      *
      * @var int
      */
-    protected int $status = ConnectedInterface::STATUS_INITIAL;
+    protected int $status = CommunicationConnectedInterface::STATUS_INITIAL;
 
     /**
      * 接收状态
@@ -119,7 +134,7 @@ trait ConnectedCommunication
             $this->sendBuffer = substr($data, $wLen);
 
             // 监听套接字写，发送缓冲区数据由套接字写回调处理
-            $this->reactor->addWrite($this->stream, [$this, 'writeCallback']);
+            $this->reactor->addWrite($this->socket, [$this, 'writeCallback']);
         } else {
             if ($this->isSendBufferFull()) {
                 return;
@@ -133,7 +148,7 @@ trait ConnectedCommunication
     /**
      * @inheritDoc
      */
-    public function close()
+    public function close(): void
     {
         if ($this->status === self::STATUS_CONNECTING) {
             $this->destroy();
@@ -156,7 +171,7 @@ trait ConnectedCommunication
      */
     protected function readOnly()
     {
-        return @fread($this->stream, $this->readBufferSize);
+        return @fread($this->socket, $this->readBufferSize);
     }
 
     /**
@@ -167,7 +182,7 @@ trait ConnectedCommunication
      */
     protected function writeOnly(string $data)
     {
-        return @fwrite($this->stream, $data);
+        return @fwrite($this->socket, $data);
     }
 
     /**
@@ -175,7 +190,7 @@ trait ConnectedCommunication
      *
      * @return bool
      */
-    protected function checkConnection()
+    protected function checkConnection(): bool
     {
         return true;
     }
@@ -198,11 +213,11 @@ trait ConnectedCommunication
                 if ($message) {
                     $this->dispatch(Message::class, $message);
                 } elseif (strlen($this->recvBuffer) >= $this->maxRecvBufferSize) {
-                    $this->dispatchCache(ConnectionRecvBufferFull::class);
+                    $this->dispatch(RecvBufferFull::class);
                     $this->destroy();
                 }
             } catch (UnpackedException $e) {
-                $this->dispatch(ConnectionUnpackingFail::class, $e);
+                $this->dispatch(UnpackingFail::class, $e);
                 $this->destroy();
             }
         } elseif ($checkEof && ($read === false || $this->invalid())) {
@@ -243,13 +258,13 @@ trait ConnectedCommunication
             // 发送缓冲全部写入成功
             if ($writeLength === $length) {
                 // 清除写侦听
-                $this->reactor->delWrite($this->stream);
+                $this->reactor->delWrite($this->socket);
 
                 // 清空发送缓冲区
                 $this->sendBuffer = '';
 
                 // 清空缓冲区事件分发
-                $this->dispatchCache(SendBufferDrain::class);
+                $this->dispatch(SendBufferDrain::class);
 
                 // 处于关闭阶段，销毁连接
                 if ($this->status === self::STATUS_CLOSING) {
@@ -261,7 +276,7 @@ trait ConnectedCommunication
             }
         } // 写入失败（分发事件），破坏连接
         else {
-            $this->dispatchCache(SendFail::class);
+            $this->dispatch(SendFail::class);
             $this->destroy();
         }
     }
@@ -275,7 +290,7 @@ trait ConnectedCommunication
     {
         $full = strlen($this->sendBuffer) >= $this->maxSendBufferSize;
         if ($full) {
-            $this->dispatchCache(SendBufferFull::class);
+            $this->dispatch(SendBufferFull::class);
         }
         return $full;
     }
@@ -289,8 +304,8 @@ trait ConnectedCommunication
             return;
         }
 
-        $this->reactor->delRead($this->stream);
-        $this->reactor->delWrite($this->stream);
+        $this->reactor->delRead($this->socket);
+        $this->reactor->delWrite($this->socket);
 
         $this->server->removeConnection($this->hash());
         $this->closeSocket();
@@ -309,7 +324,7 @@ trait ConnectedCommunication
     {
         if ($this->receiving === false) {
             $this->receiving = true;
-            $this->addRecvReactor();
+            $this->addReadReactor([$this, 'receive']);
             $this->read($checkEof);
         }
     }
@@ -320,7 +335,7 @@ trait ConnectedCommunication
     protected function pauseRecv()
     {
         if ($this->receiving === true) {
-            $this->reactor->delRead($this->stream);
+            $this->reactor->delRead($this->socket);
             $this->receiving = false;
         }
     }

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace chaser\stream\traits;
 
 use chaser\stream\events\{
-    ConnectionRecvBufferFull,
-    ConnectionUnpackingFail,
+    RecvBufferFull,
+    UnpackingFail,
     SendBufferDrain,
     SendBufferFull,
     SendFail,
@@ -14,44 +14,44 @@ use chaser\stream\events\{
 };
 
 /**
- * 连接通信订阅者相关
+ * 通信连接部分订阅特征
  *
  * @package chaser\stream\traits
  */
-trait ConnectedCommunicationSubscribable
+trait CommunicationConnectedSubscribable
 {
-    use Subscribable;
-
     /**
-     * 添加连接通信相关事件订阅
+     * 返回事件响应对照表补充
+     *
+     * @return string[]
      */
-    protected function addConnectedEvents()
+    protected static function moreEvents(): array
     {
-        $this->setEvents([
-            ConnectionRecvBufferFull::class => 'recvBufferFull',
-            ConnectionUnpackingFail::class => 'unpackingFail',
+        return [
+            RecvBufferFull::class => 'recvBufferFull',
+            UnpackingFail::class => 'unpackingFail',
             SendBufferDrain::class => 'sendBufferDrain',
             SendBufferFull::class => 'sendBufferFull',
             SendFail::class => 'sendFail',
             SendInvalid::class => 'sendInvalid'
-        ]);
+        ];
     }
 
     /**
      * 接收缓冲区满事件响应
      *
-     * @param ConnectionRecvBufferFull $event
+     * @param RecvBufferFull $event
      */
-    public function recvBufferFull(ConnectionRecvBufferFull $event): void
+    public function recvBufferFull(RecvBufferFull $event): void
     {
     }
 
     /**
      * 解包失败事件响应
      *
-     * @param ConnectionUnpackingFail $event
+     * @param UnpackingFail $event
      */
-    public function unpackingFail(ConnectionUnpackingFail $event): void
+    public function unpackingFail(UnpackingFail $event): void
     {
     }
 

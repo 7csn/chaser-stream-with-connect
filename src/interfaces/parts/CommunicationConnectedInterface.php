@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace chaser\stream\interfaces\parts;
 
 /**
- * 通信连接部分
+ * 通信连接部分接口
  *
  * @package chaser\stream\interfaces\parts
  */
-interface ConnectedInterface
+interface CommunicationConnectedInterface
 {
     /**
      * 状态：初始

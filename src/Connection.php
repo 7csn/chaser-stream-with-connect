@@ -7,20 +7,17 @@ namespace chaser\stream;
 use chaser\reactor\Driver;
 use chaser\stream\events\Connect;
 use chaser\stream\interfaces\ConnectionInterface;
-use chaser\stream\traits\{Communication, ConnectedCommunication, Helper};
+use chaser\stream\subscribers\ConnectionSubscriber;
+use chaser\stream\traits\{Common, Communication, ConnectedCommunication};
 
 /**
- * 连接
+ * 服务器接收的连接类
  *
  * @package chaser\stream
- *
- * @property int $readBufferSize
- * @property int $maxRecvBufferSize
- * @property int $maxSendBufferSize
  */
 class Connection implements ConnectionInterface
 {
-    use Communication, Helper, ConnectedCommunication;
+    use Common, Communication, ConnectedCommunication;
 
     /**
      * 服务器对象
@@ -30,29 +27,11 @@ class Connection implements ConnectionInterface
     protected ConnectedServer $server;
 
     /**
-     * 事件反应器
-     *
-     * @var Driver
-     */
-    protected Driver $reactor;
-
-    /**
      * 对象标识
      *
      * @var string
      */
     protected string $hash;
-
-    /**
-     * 常规配置
-     *
-     * @var array
-     */
-    protected array $configurations = [
-        'readBufferSize' => self::READ_BUFFER_SIZE,
-        'maxRecvBufferSize' => self::MAX_REQUEST_BUFFER_SIZE,
-        'maxSendBufferSize' => self::MAX_RESPONSE_BUFFER_SIZE
-    ];
 
     /**
      * @inheritDoc
@@ -77,7 +56,7 @@ class Connection implements ConnectionInterface
 
         $this->server = $server;
         $this->reactor = $reactor;
-        $this->stream = $stream;
+        $this->socket = $stream;
 
         $this->initEventDispatcher();
     }
@@ -97,7 +76,7 @@ class Connection implements ConnectionInterface
     {
         if ($this->status === self::STATUS_INITIAL) {
             $this->status = self::STATUS_CONNECTING;
-            $this->reactor->addRead($this->stream, [$this, 'connecting']);
+            $this->addReadReactor([$this, 'connecting']);
         }
     }
 
@@ -107,7 +86,7 @@ class Connection implements ConnectionInterface
     public function connecting()
     {
         if ($this->status === self::STATUS_CONNECTING && $this->checkConnection()) {
-            $this->reactor->delRead($this->stream);
+            $this->reactor->delRead($this->socket);
             $this->connected(true);
         }
     }
@@ -120,7 +99,7 @@ class Connection implements ConnectionInterface
     protected function connected(bool $checkEof = false)
     {
         $this->status = self::STATUS_ESTABLISHED;
-        $this->dispatchCache(Connect::class);
+        $this->dispatch(Connect::class);
         $this->resumeRecv($checkEof);
     }
 }
