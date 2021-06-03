@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace chaser\stream\interfaces\parts;
+namespace chaser\stream\interfaces\part;
 
 /**
  * 通信连接部分接口
  *
- * @package chaser\stream\interfaces\parts
+ * @package chaser\stream\interfaces\part
  */
-interface CommunicationConnectedInterface
+interface CommunicationConnectInterface
 {
     /**
      * 状态：初始
@@ -54,14 +54,7 @@ interface CommunicationConnectedInterface
     public const READ_BUFFER_SIZE = (64 << 10) - 1;
 
     /**
-     * 请求缓冲区默认上限 10M
-     *
-     * @var int
+     * 发送缓冲区默认上限 10M
      */
-    public const MAX_REQUEST_BUFFER_SIZE = 10 << 10 << 10;
-
-    /**
-     * 响应缓冲区默认上限 1M
-     */
-    public const MAX_RESPONSE_BUFFER_SIZE = 1 << 10 << 10;
+    public const MAX_SEND_BUFFER_SIZE = 10 << 10 << 10;
 }

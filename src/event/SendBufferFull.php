@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace chaser\stream\events;
+namespace chaser\stream\event;
 
 /**
  * 发送缓冲区满事件类
  *
- * @package chaser\stream\events
+ * @package chaser\stream\event
  */
 class SendBufferFull
 {

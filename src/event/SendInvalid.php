@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace chaser\stream\events;
+namespace chaser\stream\event;
 
 use chaser\stream\traits\PropertyReadable;
 
 /**
- * 信息发送无效（客户端关闭）事件类
+ * 信息发送无效事件类
  *
- * @package chaser\stream\events
+ * @package chaser\stream\event
  *
  * @property-read string $data
  */

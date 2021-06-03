@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace chaser\stream\events;
+namespace chaser\stream\event;
 
 use chaser\stream\traits\PropertyReadable;
 use Throwable;
@@ -10,7 +10,7 @@ use Throwable;
 /**
  * 解包失败事件类
  *
- * @package chaser\stream\events
+ * @package chaser\stream\event
  *
  * @property-read Throwable $exception
  */

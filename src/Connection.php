@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace chaser\stream;
 
+use chaser\container\ContainerInterface;
 use chaser\reactor\Driver;
-use chaser\stream\events\Connect;
 use chaser\stream\interfaces\ConnectionInterface;
-use chaser\stream\subscribers\ConnectionSubscriber;
-use chaser\stream\traits\{Common, Communication, ConnectedCommunication};
+use chaser\stream\interfaces\part\ServerConnectInterface;
+use chaser\stream\subscriber\ConnectionSubscriber;
+use chaser\stream\traits\{Common, Communication, CommunicationConnected};
 
 /**
  * 服务器接收的连接类
@@ -17,21 +18,29 @@ use chaser\stream\traits\{Common, Communication, ConnectedCommunication};
  */
 class Connection implements ConnectionInterface
 {
-    use Common, Communication, ConnectedCommunication;
+    use Common, Communication, CommunicationConnected;
 
     /**
      * 服务器对象
      *
-     * @var ConnectedServer
+     * @var ServerConnectInterface
      */
-    protected ConnectedServer $server;
+    protected ServerConnectInterface $server;
 
     /**
      * 对象标识
      *
-     * @var string
+     * @var int
      */
-    protected string $hash;
+    protected int $hash;
+
+    /**
+     * @inheritDoc
+     */
+    public static function configurations(): array
+    {
+        return CommunicationConnected::configurations() + Common::configurations();
+    }
 
     /**
      * @inheritDoc
@@ -42,64 +51,71 @@ class Connection implements ConnectionInterface
     }
 
     /**
-     * 构造函数
+     * 构造方法
      *
-     * @param ConnectedServer $server
+     * @param ContainerInterface $container
+     * @param ServerConnectInterface $server
      * @param Driver $reactor
      * @param resource $socket
      */
-    public function __construct(ConnectedServer $server, Driver $reactor, $socket)
+    public function __construct(ContainerInterface $container, ServerConnectInterface $server, Driver $reactor, $socket)
     {
-        // 非阻塞模式、兼容 hhvm 无缓冲
-        stream_set_blocking($socket, false);
-        stream_set_read_buffer($socket, 0);
-
+        $this->container = $container;
         $this->server = $server;
         $this->reactor = $reactor;
         $this->socket = $socket;
 
-        $this->initEventDispatcher();
+        $this->configureSocket();
+
+        $this->initCommon();
     }
 
     /**
      * @inheritDoc
      */
-    public function hash(): string
+    public function hash(): int
     {
-        return $this->hash ??= spl_object_hash($this);
+        return $this->hash ??= (int)$this->socket;
     }
 
     /**
      * @inheritDoc
      */
-    public function connect()
+    public function establish(): void
     {
         if ($this->status === self::STATUS_INITIAL) {
             $this->status = self::STATUS_CONNECTING;
-            $this->addReadReactor([$this, 'connecting']);
+            $this->addReadReact(function () {
+                if ($this->status === self::STATUS_CONNECTING && $this->isEstablished()) {
+                    $this->delReadReact();
+                    $this->status = self::STATUS_ESTABLISHED;
+                    $this->addReadReact([$this, 'receive']);
+                }
+            });
         }
     }
 
     /**
-     * 连接中
+     * 关闭连接处理
      */
-    public function connecting()
+    protected function closeHandle(): void
     {
-        if ($this->status === self::STATUS_CONNECTING && $this->checkConnection()) {
-            $this->reactor->delRead($this->socket);
-            $this->connected(true);
-        }
+        $this->sendBuffer === '' ? $this->destroy() : $this->delReadReact();
     }
 
     /**
-     * 连接成功
-     *
-     * @param bool $checkEof
+     * 破坏连接处理
      */
-    protected function connected(bool $checkEof = false)
+    protected function destroyHandle(): void
     {
-        $this->status = self::STATUS_ESTABLISHED;
-        $this->dispatch(Connect::class);
-        $this->resumeRecv($checkEof);
+        $this->server->removeConnection($this->hash());
+    }
+
+    /**
+     * 写入完成
+     */
+    protected function writeCompleteHandle(): void
+    {
+        $this->destroy();
     }
 }

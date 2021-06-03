@@ -1,31 +1,28 @@
 <?php
 
-namespace chaser\stream\subscribers;
+declare(strict_types=1);
+
+namespace chaser\stream\subscriber;
 
 use chaser\container\ContainerInterface;
 use chaser\stream\interfaces\ConnectionInterface;
-use chaser\stream\traits\CommunicationSubscribable;
-use chaser\stream\traits\CommunicationConnectedSubscribable;
+use chaser\stream\traits\{CommunicationConnectedSubscribable, CommunicationSubscribable};
 
 /**
  * 通信连接事件订阅类
  *
- * @package chaser\stream\subscribers
+ * @package chaser\stream\subscriber
  */
 class ConnectionSubscriber extends Subscriber
 {
-    use CommunicationSubscribable {
-        events as CommunicationEvents;
-    }
-
-    use CommunicationConnectedSubscribable;
+    use CommunicationConnectedSubscribable, CommunicationSubscribable;
 
     /**
      * @inheritDoc
      */
     public static function events(): array
     {
-        return self::moreEvents() + self::CommunicationEvents();
+        return CommunicationConnectedSubscribable::events() + CommunicationSubscribable::events();
     }
 
     /**

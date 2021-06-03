@@ -1,17 +1,19 @@
 <?php
 
-namespace chaser\stream\subscribers;
+declare(strict_types=1);
 
-use chaser\stream\events\ConnectFail;
-use chaser\stream\interfaces\ConnectedClientInterface;
+namespace chaser\stream\subscriber;
+
+use chaser\stream\ConnectClient;
+use chaser\stream\event\ConnectFail;
 use chaser\stream\traits\CommunicationConnectedSubscribable;
 
 /**
  * 有通信连接的客户端事件订阅类
  *
- * @package chaser\stream\subscribers
+ * @package chaser\stream\subscriber
  *
- * @property  ConnectedClientInterface $client
+ * @property ConnectClient $client
  */
 class ConnectedClientSubscriber extends ClientSubscriber
 {
@@ -22,7 +24,7 @@ class ConnectedClientSubscriber extends ClientSubscriber
      */
     public static function events(): array
     {
-        return self::moreEvents() + parent::events();
+        return [ConnectFail::class => 'connectFail'] + CommunicationConnectedSubscribable::events() + parent::events();
     }
 
     /**

@@ -4,14 +4,7 @@ declare(strict_types=1);
 
 namespace chaser\stream\traits;
 
-use chaser\stream\events\{
-    RecvBufferFull,
-    UnpackingFail,
-    SendBufferDrain,
-    SendBufferFull,
-    SendFail,
-    SendInvalid
-};
+use chaser\stream\event\{SendBufferDrain, SendBufferFull, SendFail, SendInvalid};
 
 /**
  * 通信连接部分订阅特征
@@ -21,38 +14,16 @@ use chaser\stream\events\{
 trait CommunicationConnectedSubscribable
 {
     /**
-     * 返回事件响应对照表补充
-     *
-     * @return string[]
+     * @inheritDoc
      */
-    protected static function moreEvents(): array
+    protected static function events(): array
     {
         return [
-            RecvBufferFull::class => 'recvBufferFull',
-            UnpackingFail::class => 'unpackingFail',
             SendBufferDrain::class => 'sendBufferDrain',
             SendBufferFull::class => 'sendBufferFull',
             SendFail::class => 'sendFail',
             SendInvalid::class => 'sendInvalid'
         ];
-    }
-
-    /**
-     * 接收缓冲区满事件响应
-     *
-     * @param RecvBufferFull $event
-     */
-    public function recvBufferFull(RecvBufferFull $event): void
-    {
-    }
-
-    /**
-     * 解包失败事件响应
-     *
-     * @param UnpackingFail $event
-     */
-    public function unpackingFail(UnpackingFail $event): void
-    {
     }
 
     /**
