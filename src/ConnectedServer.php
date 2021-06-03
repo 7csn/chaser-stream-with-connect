@@ -14,7 +14,7 @@ use chaser\stream\subscriber\ConnectedServerSubscriber;
  *
  * @package chaser\stream
  *
- * @property-read array $connection
+ * @property-read ConnectionInterface[] $connection
  */
 abstract class ConnectedServer extends Server implements ServerConnectInterface
 {
@@ -39,6 +39,14 @@ abstract class ConnectedServer extends Server implements ServerConnectInterface
     public static function configurations(): array
     {
         return ['connection' => []] + parent::configurations();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function removeConnection(int $hash): void
+    {
+        unset($this->connections[$hash]);
     }
 
     /**
@@ -69,20 +77,10 @@ abstract class ConnectedServer extends Server implements ServerConnectInterface
     /**
      * @inheritDoc
      */
-    public function removeConnection(int $hash): void
-    {
-        unset($this->connections[$hash]);
-    }
-
-    /**
-     * @inheritDoc
-     */
     protected function close(): void
     {
-        if ($this->socket) {
-            $this->closeConnections();
-            $this->closeSocket();
-        }
+        $this->closeConnections();
+        parent::close();
     }
 
     /**

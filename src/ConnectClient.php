@@ -6,6 +6,7 @@ namespace chaser\stream;
 
 use chaser\stream\interfaces\part\CommunicationConnectInterface;
 use chaser\stream\event\ConnectFail;
+use chaser\stream\subscriber\ConnectedClientSubscriber;
 use chaser\stream\traits\CommunicationConnected;
 
 /**
@@ -16,6 +17,14 @@ use chaser\stream\traits\CommunicationConnected;
 abstract class ConnectClient extends Client implements CommunicationConnectInterface
 {
     use CommunicationConnected;
+
+    /**
+     * @inheritDoc
+     */
+    public static function subscriber(): string
+    {
+        return ConnectedClientSubscriber::class;
+    }
 
     /**
      * @inheritDoc

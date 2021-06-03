@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace chaser\stream\subscriber;
 
-use chaser\container\ContainerInterface;
+use chaser\stream\event\Established;
 use chaser\stream\interfaces\ConnectionInterface;
 use chaser\stream\traits\{CommunicationConnectedSubscribable, CommunicationSubscribable};
 
@@ -22,16 +22,24 @@ class ConnectionSubscriber extends Subscriber
      */
     public static function events(): array
     {
-        return CommunicationConnectedSubscribable::events() + CommunicationSubscribable::events();
+        return [Established::class => 'established'] + CommunicationConnectedSubscribable::events() + CommunicationSubscribable::events();
     }
 
     /**
      * 构造方法
      *
-     * @param ContainerInterface $container
      * @param ConnectionInterface $connection
      */
-    public function __construct(protected ContainerInterface $container, protected ConnectionInterface $connection)
+    public function __construct(protected ConnectionInterface $connection)
+    {
+    }
+
+    /**
+     * 连接稳定事件响应
+     *
+     * @param Established $event
+     */
+    public function established(Established $event): void
     {
     }
 }

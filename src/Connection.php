@@ -6,6 +6,7 @@ namespace chaser\stream;
 
 use chaser\container\ContainerInterface;
 use chaser\reactor\Driver;
+use chaser\stream\event\Established;
 use chaser\stream\interfaces\ConnectionInterface;
 use chaser\stream\interfaces\part\ServerConnectInterface;
 use chaser\stream\subscriber\ConnectionSubscriber;
@@ -90,6 +91,7 @@ class Connection implements ConnectionInterface
                     $this->delReadReact();
                     $this->status = self::STATUS_ESTABLISHED;
                     $this->addReadReact([$this, 'receive']);
+                    $this->dispatch(Established::class);
                 }
             });
         }
