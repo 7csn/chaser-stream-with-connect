@@ -16,7 +16,7 @@ trait CommunicationConnectedSubscribable
     /**
      * @inheritDoc
      */
-    protected static function events(): array
+    public static function events(): array
     {
         return [
             SendBufferDrain::class => 'sendBufferDrain',
