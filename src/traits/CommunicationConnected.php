@@ -57,7 +57,7 @@ trait CommunicationConnected
      */
     public static function configurations(): array
     {
-        return ['readBufferSize' => self::READ_BUFFER_SIZE, 'maxSendBufferSize' => self::MAX_SEND_BUFFER_SIZE];
+        return ['readBufferSize' => CommunicationConnectInterface::READ_BUFFER_SIZE, 'maxSendBufferSize' => CommunicationConnectInterface::MAX_SEND_BUFFER_SIZE];
     }
 
     /**
