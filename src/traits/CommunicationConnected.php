@@ -103,7 +103,7 @@ trait CommunicationConnected
             }
 
             // 有发送缓冲，添加可写反应
-            $this->addWriteReact(fn(): void => $this->write());
+            $this->addWriteReact(fn() => $this->write());
         } else {
             $this->sendBuffer .= $data;
         }
