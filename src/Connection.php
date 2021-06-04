@@ -6,7 +6,7 @@ namespace chaser\stream;
 
 use chaser\container\ContainerInterface;
 use chaser\reactor\Driver;
-use chaser\stream\event\Established;
+use chaser\stream\event\Establish;
 use chaser\stream\interfaces\ConnectionInterface;
 use chaser\stream\interfaces\part\ServerConnectInterface;
 use chaser\stream\subscriber\ConnectionSubscriber;
@@ -90,11 +90,19 @@ class Connection implements ConnectionInterface
                 if ($this->status === self::STATUS_CONNECTING && $this->isEstablished()) {
                     $this->delReadReact();
                     $this->status = self::STATUS_ESTABLISHED;
+                    $this->dispatchEstablish();
                     $this->addReadReact([$this, 'receive']);
-                    $this->dispatch(Established::class);
                 }
             });
         }
+    }
+
+    /**
+     * 连接稳定事件分发
+     */
+    protected function dispatchEstablish(): void
+    {
+        $this->dispatch(Establish::class);
     }
 
     /**

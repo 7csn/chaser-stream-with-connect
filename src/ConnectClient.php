@@ -39,16 +39,6 @@ abstract class ConnectClient extends Client implements CommunicationConnectInter
      */
     public function ready(): void
     {
-        // 可连接状态：初始、关闭中、已关闭
-        if ($this->status === self::STATUS_INITIAL || $this->status === self::STATUS_CLOSING || $this->status === self::STATUS_CLOSED) {
-            // 关闭中套接字流尚在，不需另行创建
-            if ($this->status !== self::STATUS_CLOSING) {
-                $this->create();
-            }
-            $this->status = self::STATUS_CONNECTING;
-            $this->addWriteReact([$this, 'connecting']);
-        }
-
         // 可连接状态：初始、已关闭
         if ($this->status === self::STATUS_INITIAL || $this->status === self::STATUS_CLOSED) {
             $this->create();

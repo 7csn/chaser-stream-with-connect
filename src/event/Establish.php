@@ -9,6 +9,6 @@ namespace chaser\stream\event;
  *
  * @package chaser\stream\event
  */
-class Established
+class Establish
 {
 }
