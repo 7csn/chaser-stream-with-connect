@@ -58,7 +58,7 @@ abstract class ConnectedServer extends Server implements ServerConnectInterface
             return;
         }
 
-        $socket = stream_socket_accept($this->socket, 0);
+        $socket = @stream_socket_accept($this->socket, 0);
 
         if ($socket) {
             // 获取连接并保存
