@@ -85,6 +85,7 @@ class Connection implements ConnectionInterface
     public function establish(): void
     {
         if ($this->status === self::STATUS_INITIAL) {
+            $this->internalSubscription();
             $this->status = self::STATUS_CONNECTING;
             $this->addReadReact(function () {
                 if ($this->status === self::STATUS_CONNECTING && $this->isEstablished()) {
