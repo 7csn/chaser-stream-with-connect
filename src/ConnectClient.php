@@ -43,7 +43,7 @@ abstract class ConnectClient extends Client implements CommunicationConnectInter
         if ($this->status === self::STATUS_INITIAL || $this->status === self::STATUS_CLOSED) {
             $this->create();
             $this->status = self::STATUS_CONNECTING;
-            $this->addWriteReact(function () {
+            $this->setWriteReact(function () {
                 if ($this->status === self::STATUS_CONNECTING) {
                     if ($remoteAddress = stream_socket_get_name($this->socket, true)) {
                         $this->target = $remoteAddress;

@@ -103,7 +103,7 @@ trait CommunicationConnected
             }
 
             // 有发送缓冲，添加可写反应
-            $this->addWriteReact(fn() => $this->write());
+            $this->setWriteReact(fn() => $this->write());
         } else {
             $this->sendBuffer .= $data;
         }
@@ -168,7 +168,7 @@ trait CommunicationConnected
             $length = strlen($read);
             $this->readBytes += $length;
             $this->readHandle($read);
-        } elseif ($checkEof && $this->invalid()) {
+        } elseif ($checkEof && ($read === false || $this->invalid())) {
             $this->destroy(true);
         }
     }
@@ -259,11 +259,11 @@ trait CommunicationConnected
     /**
      * 套接字读
      *
-     * @return string
+     * @return string|false
      */
-    protected function readFromSocket(): string
+    protected function readFromSocket(): string|false
     {
-        return (string)@fread($this->socket, $this->readBufferSize);
+        return fread($this->socket, $this->readBufferSize);
     }
 
     /**
@@ -274,18 +274,18 @@ trait CommunicationConnected
      */
     protected function writeToSocket(string $data): int
     {
-        return (int)@fwrite($this->socket, $data);
+        return (int)fwrite($this->socket, $data);
     }
 
     /**
-     * 添加写事件侦听到事件循环
+     * 设置写事件侦听器到事件循环
      *
      * @param callable $callback
      * @return bool
      */
-    protected function addWriteReact(callable $callback): bool
+    protected function setWriteReact(callable $callback): bool
     {
-        return $this->reactor->addWrite($this->socket, $callback);
+        return $this->reactor->setWrite($this->socket, $callback);
     }
 
     /**

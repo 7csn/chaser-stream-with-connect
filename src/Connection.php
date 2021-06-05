@@ -87,12 +87,12 @@ class Connection implements ConnectionInterface
         if ($this->status === self::STATUS_INITIAL) {
             $this->internalSubscription();
             $this->status = self::STATUS_CONNECTING;
-            $this->addReadReact(function () {
+            $this->setReadReact(function () {
                 if ($this->status === self::STATUS_CONNECTING && $this->isEstablished()) {
                     $this->delReadReact();
                     $this->status = self::STATUS_ESTABLISHED;
                     $this->dispatchEstablish();
-                    $this->addReadReact([$this, 'receive']);
+                    $this->setReadReact([$this, 'receive']);
                 }
             });
         }
