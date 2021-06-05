@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace chaser\stream\traits;
 
+use chaser\stream\interfaces\SubscriberInterface;
 use chaser\stream\event\{SendBufferDrain, SendBufferFull, SendFail, SendInvalid};
 
 /**
  * 通信连接部分订阅特征
  *
  * @package chaser\stream\traits
+ *
+ * @see SubscriberInterface
  */
 trait CommunicationConnectedSubscribable
 {
