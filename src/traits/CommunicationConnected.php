@@ -219,7 +219,7 @@ trait CommunicationConnected
      */
     protected function readHandle(string $data): void
     {
-        $this->dispatchMessage($data);
+        $this->dispatch(Message::class, $data);
     }
 
     /**
@@ -244,16 +244,6 @@ trait CommunicationConnected
             // 更新发送缓冲区
             $this->sendBuffer = substr($this->sendBuffer, $length);
         }
-    }
-
-    /**
-     * 消息事件分发
-     *
-     * @param mixed $message
-     */
-    protected function dispatchMessage(mixed $message): void
-    {
-        $this->dispatch(Message::class, $message);
     }
 
     /**
