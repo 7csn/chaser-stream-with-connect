@@ -91,19 +91,11 @@ class Connection implements ConnectionInterface
                 if ($this->status === self::STATUS_CONNECTING && $this->isEstablished()) {
                     $this->delReadReact();
                     $this->status = self::STATUS_ESTABLISHED;
-                    $this->dispatchEstablish();
+                    $this->dispatch(Establish::class);
                     $this->setReadReact([$this, 'receive']);
                 }
             });
         }
-    }
-
-    /**
-     * 连接稳定事件分发
-     */
-    protected function dispatchEstablish(): void
-    {
-        $this->dispatch(Establish::class);
     }
 
     /**
